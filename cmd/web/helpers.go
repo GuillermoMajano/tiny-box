@@ -11,9 +11,9 @@ import (
 
 func (app *application) addDefaultData(td *TemplateData, r *http.Request) *TemplateData {
 
-	/*	if td != nil {
+		if td == nil {
 		td = &TemplateData{}
-	}*/
+	}
 	td.CurrentYear = time.Now().Year()
 
 	return td
