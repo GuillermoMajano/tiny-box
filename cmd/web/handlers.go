@@ -16,7 +16,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s, err := app.snippets.Latest()
-
+	fmt.Print(s)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -52,7 +52,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("you request to showsnippext")
+
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil || id < 1 {
@@ -60,7 +60,7 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := app.snippets.Latest()
+	s, err := app.snippets.Get(id)
 
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -72,10 +72,10 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	app.render(w, r, "show.page.tmpl", &TemplateData{Snippets: s})
+	app.render(w, r, "show.page.tmpl",app.addDefaultData(&TemplateData{Snippet: s},r))
 
-	/*
-		ts, err := template.ParseFiles(files...)
+	/*ts, err
+ := template.ParseFiles(files...)
 
 		if err != nil {
 			app.serverError(w, err)
