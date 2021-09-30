@@ -3,23 +3,21 @@ package main
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/bmizerany/pat" // New import
 	"github.com/justinas/alice"
 )
 
 func (app *application) routes() http.Handler {
+	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
-	standardMiddleware := alice.New(app.reciverPanic, app.logResquest, secureHeader)
+	mux := pat.New()
+	mux.Get("/", http.HandlerFunc(app.home))
+	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
+	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
+	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet)) // Moved down
 
-	r := httprouter.New()
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
-	r.GET("/", app.home)
-	r.GET("/snippet/create", app.createSnippetForm)
-	r.POST("/snippet/create", app.createSnippet)
-	r.GET("/snippet/:id", app.showSnippet)
-
-	r.ServeFiles("/static", http.Dir("./ui/static/"))
-
-	return standardMiddleware.Then(r)
-
+	return standardMiddleware.Then(mux)
 }
