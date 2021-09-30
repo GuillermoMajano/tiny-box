@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (app *application) reciverPanic(next http.Handler) http.Handler {
+func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -21,7 +21,7 @@ func (app *application) reciverPanic(next http.Handler) http.Handler {
 	})
 }
 
-func secureHeader(next http.Handler) http.Handler {
+func secureHeaders(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
@@ -32,7 +32,7 @@ func secureHeader(next http.Handler) http.Handler {
 
 }
 
-func (app *application) logResquest(next http.Handler) http.Handler {
+func (app *application) logRequest(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.infoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
