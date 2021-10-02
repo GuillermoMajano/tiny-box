@@ -11,9 +11,9 @@ import (
 
 func (app *application) addDefaultData(td *TemplateData, r *http.Request) *TemplateData {
 
-	/*	if td != nil {
+	if td == nil {
 		td = &TemplateData{}
-	}*/
+	}
 	td.CurrentYear = time.Now().Year()
 
 	return td
@@ -28,9 +28,15 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 	}
 
 	buf := new(bytes.Buffer)
+	var err error
+	if td != nil {
+		td = app.addDefaultData(td, r)
+		err = ts.Execute(buf, td)
+	} else {
 
-	err := ts.Execute(buf, app.addDefaultData(td, r))
+		err = ts.Execute(buf, nil)
 
+	}
 	if nil != err {
 		app.serverError(w, err)
 		return
