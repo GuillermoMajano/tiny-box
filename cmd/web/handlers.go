@@ -1,14 +1,13 @@
 package main
 
 import (
+	"GuillermoMajano/snippetbox/pkg/forms"
 	"GuillermoMajano/snippetbox/pkg/models"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +87,9 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "create.page.tmpl", nil)
+	app.render(w, r, "create.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
@@ -100,35 +101,17 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errors := make(map[string]string)
+	form := forms.New(r.PostForm)
+	form.Required("title", "content", "expires")
+	form.MaxLenth("title", 100)
+	form.PermittiedValues("expires", "365", "7", "1")
 
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	expires := r.PostForm.Get("expires")
-
-	if strings.TrimSpace(title) == "" {
-		errors["title"] = "This field cannot be blank"
-
-	} else if utf8.RuneCountInString(title) > 100 {
-		errors["title"] = "This field is too long (maximun is 100 character)"
-	}
-
-	if strings.TrimSpace(content) == "" {
-		errors["content"] = "this field cannot be blank"
-	}
-
-	if strings.TrimSpace(expires) == "" {
-
-	} else if expires != "365" && expires != "7" && expires != "1" {
-		errors["expires"] = "This field is invalid"
-	}
-
-	if len(errors) > 0 {
-		fmt.Fprint(w, errors)
+	if !form.Valid() {
+		app.render(w, r, "create.page.tmpl", &TemplateData{Form: form})
 		return
 	}
 
-	id, err := app.snippets.Insert(title, content, expires)
+	id, err := app.snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expirex"))
 
 	if err != nil {
 		app.serverError(w, err)
