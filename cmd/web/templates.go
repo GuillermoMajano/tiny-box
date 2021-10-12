@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GuillermoMajano/snippetbox/pkg/forms"
 	"GuillermoMajano/snippetbox/pkg/models"
 	"html/template"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 type TemplateData struct {
 	CurrentYear int
+	Form        *forms.Form
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
 }
