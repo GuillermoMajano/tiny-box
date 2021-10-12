@@ -30,8 +30,11 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
 
 	addr := flag.String("addr", ":4000", "HTTP network address")
+
 	dsn := flag.String("dns", "skim:cloud9zed@/snippetbox?parseTime=true", "MySQL data source name")
 	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@g", "Secret key")
+	dsn := flag.String("dns", "user:local@/snippetbox?parseTime=true", "MySQL data source name")
+
 	flag.Parse()
 
 	db, err := openDB(*dsn)
