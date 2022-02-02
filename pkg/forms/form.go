@@ -3,9 +3,12 @@ package forms
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
+
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type Form struct {
 	url.Values
@@ -19,6 +22,15 @@ func New(data url.Values) *Form {
 	}
 }
 
+func (f *Form) MinLength(field string, d int) {
+	value := f.Get(field)
+
+	if value == "" {
+		return
+	}
+
+}
+
 func (f *Form) Required(fields ...string) {
 	for _, field := range fields {
 		value := f.Get(field)
@@ -27,9 +39,10 @@ func (f *Form) Required(fields ...string) {
 		}
 
 	}
+
 }
 
-func (f *Form) MaxLenth(field string, d int) {
+func (f *Form) MaxLength(field string, d int) {
 
 	value := f.Get(field)
 	if value == "" {
@@ -39,6 +52,17 @@ func (f *Form) MaxLenth(field string, d int) {
 		f.Errors.Add(field, fmt.Sprintf("This is too ling (maximun is %d characters)", d))
 	}
 
+}
+
+func (f *Form) MatchesPattern(field string, pattern *regexp.Regexp) {
+	value := f.Get(field)
+
+	if value == "" {
+		return
+	}
+	if !pattern.MatchString(value) {
+		f.Errors.Add(field, "This field is invalid")
+	}
 }
 
 func (f *Form) PermittiedValues(field string, opts ...string) {

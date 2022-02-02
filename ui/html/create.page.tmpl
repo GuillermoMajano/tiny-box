@@ -9,10 +9,11 @@
             <label>Title:</label>
             {{with .Errors.Get "title"}}
                 <label class='error'>{{.}}</label>
-            {{end}}
+		{{end}}
             <input type='text' name='title' value='{{.Get "title"}}'>
         </div>
-        <div>
+
+	<div>
             <label>Content:</label>
             {{with .Errors.Get "content"}}
                 <label class='error'>{{.}}</label>

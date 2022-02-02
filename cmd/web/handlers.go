@@ -22,33 +22,98 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	app.render(w, r, "home.page.tmpl", tp)
 
-	/*data := &TemplateData{Snippets: s}
+}
 
-	files := []string{
-		"./ui/html/home.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
+func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "signup.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
+}
 
-	ts, err := template.ParseFiles(files...)
-
+func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
 	if err != nil {
-		app.serverError(w, err)
-
-		http.Error(w, "Internal Server Error", 404)
+		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	err = ts.Execute(w, data)
+	form := forms.New(r.PostForm)
+	form.Required("name", "email", "password")
+	form.MaxLength("name", 255)
+	form.MaxLength("email", 255)
+	form.MatchesPattern("email", forms.EmailRX)
+	form.MinLength("password", 10)
 
-	if err != nil {
-		app.serverError(w, err)
+	// If there are any errors, redisplay the signup form.
+	if !form.Valid() {
+		app.render(w, r, "signup.page.tmpl", &TemplateData{Form: form})
 		return
-	}*/
+	}
+
+	err = app.users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateEmail) {
+			form.Errors.Add("email", "Address is already in use")
+			app.render(w, r, "signup.page.tmpl", &TemplateData{Form: form})
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	/*confirmation flash message to the session confirming that their signu`worked and
+	asking them to log in*/
+	app.session.Put(r, "flash", "your signup was succesful.Please log in")
+
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (app *application) loginUserForm(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "login.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Check whether the credentials are valid. If they're not, add a generic error
+	// message to the form failures map and re-display the login page.
+	form := forms.New(r.PostForm)
+	id, err := app.users.Authenticate(form.Get("email"), form.Get("password"))
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.Errors.Add("generic", "Email or Password is incorrect")
+			app.render(w, r, "login.page.tmpl", &TemplateData{Form: form})
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	// Add the ID of the current user to the session, so that they are now 'logged
+	// in'.
+	app.session.Put(r, "authenticatedUserID", id)
+
+	// Redirect the user to the create snippet page.
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
 }
 
-func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
+func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
+	// Remove the authenticatedUserID from the session data so that the user is
+	// 'logged out'.
+	app.session.Remove(r, "authenticatedUserID")
+	// Add a flash message to the session to confirm to the user that they've been
+	// logged out.
+
+	app.session.Put(r, "flash", "You've been logged out successfully!")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 
 	if err != nil || id < 1 {
@@ -68,22 +133,8 @@ func (app application) showSnippet(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	app.render(w, r, "show.page.tmpl", app.addDefaultData(&TemplateData{Snippet: s}, r))
+	app.render(w, r, "show.page.tmpl", &TemplateData{Snippet: s})
 
-	/*ts, err
-	 := template.ParseFiles(files...)
-
-			if err != nil {
-				app.serverError(w, err)
-				return
-			}
-
-			err = ts.Execute(w, data)
-
-			if err != nil {
-				app.serverError(w, err)
-				return
-			}*/
 }
 
 func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +154,7 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 
 	form := forms.New(r.PostForm)
 	form.Required("title", "content", "expires")
-	form.MaxLenth("title", 100)
+	form.MaxLength("title", 100)
 	form.PermittiedValues("expires", "365", "7", "1")
 
 	if !form.Valid() {
@@ -111,16 +162,17 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expirex"))
+	id, err := app.snippets.Insert(form.Get("title"), form.Get("content"), form.Get("expires"))
 
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
+	app.session.Put(r, "flash", "Snippet successfully created!!")
+
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 
-	w.Write([]byte("Create a new snippet..."))
 }
 
 /**func downloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -147,5 +199,4 @@ func (app *application) showallT(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	w.Write(jresp)
-
 }

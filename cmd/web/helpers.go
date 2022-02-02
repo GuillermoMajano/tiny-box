@@ -12,11 +12,13 @@ import (
 func (app *application) addDefaultData(td *TemplateData, r *http.Request) *TemplateData {
 
 	if td == nil {
-    td = &TemplateData{}
+		td = &TemplateData{}
 	}
-	
-  td.CurrentYear = time.Now().Year()
 
+	td.CurrentYear = time.Now().Year()
+
+	td.Flash = app.session.PopString(r, "flash")
+	td.IsAuthenticated = app.isAuthenticated(r)
 	return td
 }
 
@@ -29,21 +31,27 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 	}
 
 	buf := new(bytes.Buffer)
+
 	var err error
+
 	if td != nil {
 		td = app.addDefaultData(td, r)
 		err = ts.Execute(buf, td)
 	} else {
-
 		err = ts.Execute(buf, nil)
-
 	}
-	if nil != err {
+
+	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
 	buf.WriteTo(w)
+}
+
+// Return true if the current request is from authenticated user, otherwise return false.
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.session.Exists(r, "authenticatedUserID")
 }
 
 func (app *application) serverError(w http.ResponseWriter, err error) {
