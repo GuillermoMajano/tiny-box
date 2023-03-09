@@ -3,7 +3,6 @@ package main
 import (
 	"GuillermoMajano/snippetbox/pkg/forms"
 	"GuillermoMajano/snippetbox/pkg/models"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,7 +12,7 @@ import (
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	s, err := app.snippets.Latest()
-	fmt.Print(s)
+
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -63,7 +62,6 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	/*confirmation flash message to the session confirming that their signu`worked and
 	asking them to log in*/
 	app.session.Put(r, "flash", "your signup was succesful.Please log in")
-
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -129,7 +127,6 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		} else {
 			app.serverError(w, err)
 		}
-		return
 
 	}
 
@@ -175,10 +172,15 @@ func (app application) createSnippet(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "about.page.tmpl", nil)
+
+}
+
 /**func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	//fp := filepath.Clean("./ui/static/")
 	http.FileServer(http.Dir("./ui/static/"))
-}**/
+}
 
 func (app *application) showallT(w http.ResponseWriter, r *http.Request) {
 	getids, err := app.snippets.Latest()
@@ -191,7 +193,7 @@ func (app *application) showallT(w http.ResponseWriter, r *http.Request) {
 	jresp, err := json.Marshal(getids)
 
 	if err != nil {
-		app.errorlog.Println(err)
+		app.errorLog.Println(err)
 		return
 	}
 
@@ -200,3 +202,4 @@ func (app *application) showallT(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(jresp)
 }
+*/

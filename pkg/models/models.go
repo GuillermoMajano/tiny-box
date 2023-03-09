@@ -22,7 +22,7 @@ type Snippet struct {
 	ID      int
 	Title   string
 	Content string
-	Create  time.Time
+	Created time.Time
 	Expires time.Time
 }
 
@@ -33,6 +33,6 @@ type User struct {
 	Name           string
 	Email          string
 	HashedPassword []byte
-	Create         time.Time
+	Created        time.Time
 	Active         bool
 }

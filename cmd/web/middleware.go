@@ -1,6 +1,9 @@
 package main
 
 import (
+	"GuillermoMajano/snippetbox/pkg/models"
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -21,7 +24,7 @@ func noSurf(next http.Handler) http.Handler {
 func (app *application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// If the user is not authenticated, redirect them to the login page and
-		// return from the middleware chain so that no subsequenthandlers in
+		// return from the middleware chain so that no subsequentandlers in
 		// the chain are executed.
 		if !app.isAuthenticated(r) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
@@ -35,6 +38,42 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 
 		// And call the next handler in the chain.
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// If the user is not authenticated, redirect them to the login page and
+		// return from the middleware chain so that no subsequenthandlers in
+		// the chain are executed.
+
+		exist := app.session.Exists(r, "authenticatedUserID")
+
+		if !exist {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Fetch the details of the current user from the database. If no matching
+		// record is found, or the current user is has been deactivated, remove the
+		// (invalid) authenticatedUserID value from their session and call the next
+		// handler in the chain as normal.
+		user, err := app.users.Get(app.session.GetInt(r, "authenticatedUserID"))
+		if errors.Is(err, models.ErrNoRecord) || !user.Active {
+			app.session.Remove(r, "authenticatedUserID")
+			next.ServeHTTP(w, r)
+			return
+		} else if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		// Otherwise, we know that the request is coming from a active, authenticated,
+		// user. We create a new copy of the request, with a true boolean value
+		// added to the request context to indicate this, and call the next handler
+		// in the chain *using this new copy of the request*.
+		ctx := context.WithValue(r.Context(), contextKeyIsAuthenticated, true)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
