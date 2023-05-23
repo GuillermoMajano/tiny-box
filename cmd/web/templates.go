@@ -9,6 +9,7 @@ import (
 )
 
 type TemplateData struct {
+	CSRFToken       string
 	IsAuthenticated bool
 	CurrentYear     int
 	Flash           string
@@ -18,7 +19,11 @@ type TemplateData struct {
 }
 
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+	if t.IsZero() {
+		return ""
+	}
+
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 //Initiañiza a objet and store the function humanDate

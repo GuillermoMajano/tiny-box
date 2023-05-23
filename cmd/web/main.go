@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GuillermoMajano/snippetbox/pkg/models"
 	"GuillermoMajano/snippetbox/pkg/models/mysql"
 	"crypto/tls"
 	"database/sql"
@@ -15,13 +16,25 @@ import (
 	"github.com/golangcollege/sessions"
 )
 
+type contextKey string
+
+const contextKeyIsAuthenticated = contextKey("IsAuthenticated")
+
 type application struct {
-	errorlog      *log.Logger
-	infoLog       *log.Logger
-	session       *sessions.Session
-	snippets      *mysql.SnippetModel
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	session  *sessions.Session
+	snippets interface {
+		Insert(string, string, string) (int, error)
+		Get(int) (*models.Snippet, error)
+		Latest() ([]*models.Snippet, error)
+	}
 	templateCache map[string]*template.Template
-	users         *mysql.UserModel
+	users         interface {
+		Insert(string, string, string) error
+		Authenticate(string, string) (int, error)
+		Get(int) (*models.User, error)
+	}
 }
 
 func main() {
@@ -32,9 +45,9 @@ func main() {
 
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
 
-	addr := flag.String("addr", ":4000", "HTTP network address")
-
-	dsn := flag.String("dns", "root:@/snippetbox?parseTime=true", "MySQL data source name")
+	addr := flag.String("addr", ":8080", "HTTP network address")
+	//change password before CLI commit
+	dsn := flag.String("dns", "skim:cloud9zed@/snippetbox?parseTime=true", "MySQL data source name")
 	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@g", "Secret key")
 
 	flag.Parse()
@@ -59,7 +72,7 @@ func main() {
 	session.SameSite = http.SameSiteLaxMode
 
 	app := &application{
-		errorlog:      errorLog,
+		errorLog:      errorLog,
 		infoLog:       infoLog,
 		session:       session,
 		snippets:      &mysql.SnippetModel{DB: db},
