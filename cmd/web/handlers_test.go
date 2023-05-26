@@ -137,8 +137,13 @@ func TestPing(t *testing.T) {
 }
 
 //Unauthenticated users are redirected to the login form.
+<<<<<<< HEAD
 //Authenticated users are shown the form to create a new snippet.t
 /*func TestCreateSnippetForm(t *testing.T) {
+=======
+//Authenticated users are shown the form to create a new snippet.
+func TestCreateSnippetForm(t *testing.T) {
+>>>>>>> 8d2f6538fa92655d393c5ec2c0f0949b648d51ba
 	app := newTestApplication(t)
 
 	//var sr int
@@ -149,7 +154,11 @@ func TestPing(t *testing.T) {
 
 	}
 
+<<<<<<< HEAD
 }*/
+=======
+}
+>>>>>>> 8d2f6538fa92655d393c5ec2c0f0949b648d51ba
 
 func Unauthenticated(t *testing.T, ts *testServer) error {
 
