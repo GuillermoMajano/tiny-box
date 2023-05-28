@@ -3,6 +3,7 @@ package main
 import (
 	"GuillermoMajano/snippetbox/pkg/models/mock"
 	"html"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -110,18 +111,10 @@ func (ts *testServer) get(t *testing.T, urlPath string) (int, http.Header, []byt
 	return rs.StatusCode, rs.Header, body
 }
 
-<<<<<<< HEAD
-/*
-	func (ts *testServer) post(t testing.T, url string, contentType string) {
-		ts.Client().Post(ts.URL+url, contentType,ts.)
-	}
-*/
-=======
-func (ts *testServer) post(t testing.T, url string, contentType string) {
-	ts.Client().Post(ts.URL + url)
+func (ts *testServer) post(t testing.T, url, contentType string, body io.Reader) {
+	ts.Client().Post(ts.URL+url, contentType, body)
 }
 
->>>>>>> 8d2f6538fa92655d393c5ec2c0f0949b648d51ba
 var csrfTokenRX = regexp.MustCompile(`<input type='hidden' name='csrf_token' value='(.+)'>`)
 
 func extractCSRFToken(t *testing.T, body []byte) string {
@@ -135,4 +128,5 @@ func extractCSRFToken(t *testing.T, body []byte) string {
 	}
 
 	return html.UnescapeString(string(matches[1]))
+
 }

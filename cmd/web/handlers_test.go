@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"net/http"
 	"net/url"
 	"testing"
@@ -136,44 +135,55 @@ func TestPing(t *testing.T) {
 	}
 }
 
-//Unauthenticated users are redirected to the login form.
-<<<<<<< HEAD
-//Authenticated users are shown the form to create a new snippet.t
-/*func TestCreateSnippetForm(t *testing.T) {
-=======
-//Authenticated users are shown the form to create a new snippet.
+// Unauthenticated users are redirected to the login form.
+// Authenticated users are shown the form to create a new snippet.t
 func TestCreateSnippetForm(t *testing.T) {
->>>>>>> 8d2f6538fa92655d393c5ec2c0f0949b648d51ba
 	app := newTestApplication(t)
 
 	//var sr int
 
 	ts := newTestServer(t, app.routes())
 
-	if sc != 200 {
+	Unauthenticated(t, ts)
 
-	}
+	Authenticate(t, ts)
 
-<<<<<<< HEAD
-}*/
-=======
 }
->>>>>>> 8d2f6538fa92655d393c5ec2c0f0949b648d51ba
 
-func Unauthenticated(t *testing.T, ts *testServer) error {
+func Unauthenticated(t *testing.T, ts *testServer) {
 
-	sc, rh, _ := ts.get(t, "/snippet/create")
+	sc, rh, _ := ts.get(t, "user/create")
+
 	rg := rh.Get("Location")
-	if sc != 302 || rg != "/user/login" {
-		errors.New("Not redirect!")
+
+	if sc != http.StatusSeeOther && rg == "Location: /user/login" {
+		t.Errorf("i got: %d and i wanted: %d ", sc, http.StatusOK)
 	}
 
-	return nil
 }
 
-func Authenticate(ts *testServer, t *testing.T) error {
+func Authenticate(t *testing.T, ts *testServer) error {
 	_, _, rb := ts.get(t, "/user/login")
 
-	extractCSRFToken(t, rb)
+	CSRFtoken := extractCSRFToken(t, rb)
+
+	form := url.Values{}
+
+	form.Add("email", "alice@example.com")
+	form.Add("password", "")
+	form.Add("csrf_token", CSRFtoken)
+
+	ts.postForm(t, "/user/login", form)
+
+	rs, _, body := ts.get(t, "user/create")
+
+	if rs != http.StatusOK {
+		t.Errorf("want %d ; got %d", http.StatusOK, rs)
+	}
+
+	formTag := "<form action='/snippet/create' method='POST'>"
+	if !bytes.Contains(body, []byte(formTag)) {
+		t.Errorf("want body %s to contain %q", body, formTag)
+	}
 	return nil
 }
