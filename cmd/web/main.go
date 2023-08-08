@@ -47,7 +47,7 @@ func main() {
 
 	addr := flag.String("addr", ":8080", "HTTP network address")
 	//change password before CLI commit
-	dsn := flag.String("dns", "skim:cloud9zed@/snippetbox?parseTime=true", "MySQL data source name")
+	dsn := flag.String("dns", "", "MySQL data source name")
 	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@g", "Secret key")
 
 	flag.Parse()
